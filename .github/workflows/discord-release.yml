@@ -1,0 +1,23 @@
+name: Announce release in Discord
+on:
+  release:
+    types: [published]
+jobs:
+  announce:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Discord
+        env:
+          WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK_URL }}
+          RELEASE_NAME: ${{ github.event.release.name }}
+          RELEASE_BODY: ${{ github.event.release.body }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          payload=$(jq -n \
+            --arg title "🚀 $RELEASE_NAME" \
+            --arg desc "$RELEASE_BODY" \
+            --arg footer "Project Launcher · $RELEASE_TAG" \
+            '{embeds: [{title: $title, description: $desc, color: 15178515, footer: {text: $footer}}]}')
+          curl -X POST "$WEBHOOK_URL" \
+            -H "Content-Type: application/json" \
+            -d "$payload"
